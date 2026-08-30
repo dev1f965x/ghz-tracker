@@ -1,0 +1,27 @@
+services:
+  app:
+    build: .
+    ports:
+      - "3003:3000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+    env_file:
+      - .env
+    depends_on:
+      - db
+
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: ghztracker
+      POSTGRES_PASSWORD: ghztracker
+      POSTGRES_DB: ghztracker
+    ports:
+      - "5435:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+
+volumes:
+  db-data:

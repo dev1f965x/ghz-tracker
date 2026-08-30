@@ -1,0 +1,45 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum HoyoGame {
+  GENSHIN
+  HONKAI_STAR_RAIL
+  ZENLESS_ZONE_ZERO
+}
+
+model Chore {
+  id           String       @id @default(cuid())
+  game         HoyoGame
+  name         String
+  intervalDays Int          @default(1)
+  streak       Int          @default(0)
+  lastDoneAt   DateTime?
+  completions  Completion[]
+  createdAt    DateTime     @default(now())
+}
+
+model Completion {
+  id        String   @id @default(cuid())
+  choreId   String
+  chore     Chore    @relation(fields: [choreId], references: [id], onDelete: Cascade)
+  date      DateTime
+  createdAt DateTime @default(now())
+
+  @@unique([choreId, date])
+}
+
+model News {
+  id        String   @id @default(cuid())
+  game      HoyoGame
+  type      String   @default("업데이트")
+  title     String
+  date      DateTime
+  url       String?
+  createdAt DateTime @default(now())
+}
