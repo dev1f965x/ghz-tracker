@@ -17,3 +17,7 @@ docker compose up --build
 `http://localhost:3003`에서 열립니다. DB 마이그레이션은 시작할 때 자동으로 적용됩니다.
 
 날짜는 `docker-compose.yml`의 `TZ`(기본값 `Asia/Seoul`) 기준 자정에 바뀝니다.
+
+## 라이선스
+
+[MIT](./LICENSE)

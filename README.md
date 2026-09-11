@@ -17,3 +17,7 @@ docker compose up --build
 Open `http://localhost:3003`. Migrations are applied on startup.
 
 Days roll over at midnight in the `TZ` set in `docker-compose.yml` (`Asia/Seoul` by default).
+
+## License
+
+[MIT](./LICENSE)
