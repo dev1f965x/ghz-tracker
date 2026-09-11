@@ -1,26 +1,25 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
-import { daysSince, todayDateOnly } from "@/lib/cycle";
-import { isHoyoGame } from "@/lib/games";
 import { revalidatePath } from "next/cache";
+
+import { isDoneThisCycle, isInterval, nextStreak } from "@/lib/cycle";
+import { startOfDay } from "@/lib/date";
+import { isHoyoGame } from "@/lib/games";
+import { isNewsType } from "@/lib/news";
+import { prisma } from "@/lib/prisma";
+
+function text(formData: FormData, key: string): string {
+  const value = formData.get(key);
+  return typeof value === "string" ? value.trim() : "";
+}
 
 export async function addChore(formData: FormData) {
   const game = formData.get("game");
-  const name = formData.get("name");
-  const intervalRaw = formData.get("intervalDays");
-  if (typeof game !== "string" || !isHoyoGame(game)) return;
-  if (typeof name !== "string" || name.trim() === "") return;
+  const name = text(formData, "name");
+  const intervalDays = Number(text(formData, "intervalDays"));
+  if (!isHoyoGame(game) || !name || !isInterval(intervalDays)) return;
 
-  const intervalDays = typeof intervalRaw === "string" ? parseInt(intervalRaw, 10) : 1;
-
-  await prisma.chore.create({
-    data: {
-      game,
-      name: name.trim(),
-      intervalDays: Number.isFinite(intervalDays) && intervalDays > 0 ? intervalDays : 1,
-    },
-  });
+  await prisma.chore.create({ data: { game, name, intervalDays } });
   revalidatePath("/");
 }
 
@@ -31,20 +30,15 @@ export async function deleteChore(id: string) {
 
 export async function completeChore(id: string) {
   const chore = await prisma.chore.findUnique({ where: { id } });
-  if (!chore) return;
+  if (!chore || isDoneThisCycle(chore)) return;
 
-  const gap = daysSince(chore.lastDoneAt);
-  if (gap < chore.intervalDays) return; // already done this cycle
-
-  const missedCycle = chore.lastDoneAt !== null && gap >= chore.intervalDays * 2;
-  const newStreak = !chore.lastDoneAt || missedCycle ? 1 : chore.streak + 1;
-
-  const today = todayDateOnly();
+  const now = new Date();
+  const today = startOfDay(now);
 
   await prisma.$transaction([
     prisma.chore.update({
       where: { id },
-      data: { lastDoneAt: new Date(), streak: newStreak },
+      data: { lastDoneAt: now, streak: nextStreak(chore, now) },
     }),
     prisma.completion.upsert({
       where: { choreId_date: { choreId: id, date: today } },
@@ -58,28 +52,14 @@ export async function completeChore(id: string) {
 export async function addNews(formData: FormData) {
   const game = formData.get("game");
   const type = formData.get("type");
-  const title = formData.get("title");
-  const date = formData.get("date");
-  const url = formData.get("url");
+  const title = text(formData, "title");
+  const date = new Date(text(formData, "date"));
+  const url = text(formData, "url");
 
-  if (
-    typeof game !== "string" || !isHoyoGame(game) ||
-    typeof type !== "string" || type.trim() === "" ||
-    typeof title !== "string" || title.trim() === "" ||
-    typeof date !== "string" || date.trim() === ""
-  ) {
-    return;
-  }
+  if (!isHoyoGame(game) || !isNewsType(type) || !title || Number.isNaN(date.getTime())) return;
+  if (url && !/^https?:\/\//.test(url)) return;
 
-  await prisma.news.create({
-    data: {
-      game,
-      type: type.trim(),
-      title: title.trim(),
-      date: new Date(date),
-      url: typeof url === "string" && url.trim() !== "" ? url.trim() : null,
-    },
-  });
+  await prisma.news.create({ data: { game, type, title, date, url: url || null } });
   revalidatePath("/");
 }
 

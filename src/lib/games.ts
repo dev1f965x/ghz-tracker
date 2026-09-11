@@ -1,6 +1,6 @@
-export const GAMES = ["GENSHIN", "HONKAI_STAR_RAIL", "ZENLESS_ZONE_ZERO"] as const;
+import type { HoyoGame } from "@/generated/prisma/client";
 
-export type HoyoGame = (typeof GAMES)[number];
+export const GAMES: readonly HoyoGame[] = ["GENSHIN", "HONKAI_STAR_RAIL", "ZENLESS_ZONE_ZERO"];
 
 export const GAME_LABELS: Record<HoyoGame, string> = {
   GENSHIN: "원신",
@@ -8,6 +8,6 @@ export const GAME_LABELS: Record<HoyoGame, string> = {
   ZENLESS_ZONE_ZERO: "젠레스 존 제로",
 };
 
-export function isHoyoGame(value: string): value is HoyoGame {
-  return (GAMES as readonly string[]).includes(value);
+export function isHoyoGame(value: unknown): value is HoyoGame {
+  return typeof value === "string" && (GAMES as readonly string[]).includes(value);
 }
