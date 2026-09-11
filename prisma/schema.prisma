@@ -13,6 +13,13 @@ enum HoyoGame {
   ZENLESS_ZONE_ZERO
 }
 
+enum NewsType {
+  BROADCAST
+  PV
+  UPDATE
+  EVENT
+}
+
 model Chore {
   id           String       @id @default(cuid())
   game         HoyoGame
@@ -24,6 +31,7 @@ model Chore {
   createdAt    DateTime     @default(now())
 }
 
+/// One row per chore per local calendar day it was completed.
 model Completion {
   id        String   @id @default(cuid())
   choreId   String
@@ -37,7 +45,7 @@ model Completion {
 model News {
   id        String   @id @default(cuid())
   game      HoyoGame
-  type      String   @default("업데이트")
+  type      NewsType @default(UPDATE)
   title     String
   date      DateTime
   url       String?

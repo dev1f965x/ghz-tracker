@@ -9,8 +9,12 @@ services:
       - /app/.next
     env_file:
       - .env
+    environment:
+      # Chore cycles roll over at local midnight.
+      TZ: Asia/Seoul
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
   db:
     image: postgres:17-alpine
@@ -22,6 +26,11 @@ services:
       - "5435:5432"
     volumes:
       - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ghztracker"]
+      interval: 2s
+      timeout: 5s
+      retries: 15
 
 volumes:
   db-data:
